@@ -1,0 +1,1 @@
+1. Does $f(\bar{x}) = \bar{f(x)}$?

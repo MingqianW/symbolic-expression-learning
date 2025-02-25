@@ -1,86 +1,52 @@
-# model.py
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-class PhysicsCNN(nn.Module):
-    """
-    CNN架构专为学习 X_{t+1} = X_t - X_t/(R*C) 设计
-    输入维度: [batch_size, 3] (R, C, X_t)
-    输出维度: [batch_size, 1] (X_t+1)
-    """
-    def __init__(self):
-        super(PhysicsCNN, self).__init__()
-        
-        # 输入形状: [batch, 1, 3] (添加通道维度)
-        self.conv_layers = nn.Sequential(
-            # 1D卷积学习局部特征关系
-            nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.BatchNorm1d(16),
-            
-            # 深度可分离卷积增强特征提取
-            nn.Conv1d(16, 32, kernel_size=3, padding=1, groups=16),
-            nn.ReLU(),
-            nn.BatchNorm1d(32),
-            
-            nn.AdaptiveAvgPool1d(1)  # 全局池化
-        )
-        
-        # 全连接层进行物理关系建模
-        self.fc_layers = nn.Sequential(
-            nn.Linear(32, 16),
-            nn.ReLU(),
-            nn.Linear(16, 1)
-        )
-        
-        # 物理引导的初始化
-        self._initialize_weights()
+class CustomNN(nn.Module):
+    def __init__(self, n, hidden_dim=64):
+        """
+        Neural network with:
+        - n: Number of points (each consisting of X, R, C)
+        - hidden_dim: Number of neurons in the hidden layer (default 64)
+        Maps n X-values to a single neuron, n R-values to a single neuron, and n C-values to a single neuron.
+        """
+        super(CustomNN, self).__init__()
 
-    def forward(self, x):
-        # 原始输入维度: [batch, 3]
-        x = x.unsqueeze(1)  # 添加通道维度 -> [batch, 1, 3]
-        
-        # 特征提取
-        conv_out = self.conv_layers(x)  # [batch, 32, 1]
-        conv_out = conv_out.view(conv_out.size(0), -1)  # [batch, 32]
-        
-        # 物理关系回归
-        return self.fc_layers(conv_out)
-    
-    def _initialize_weights(self):
-        """物理启发式初始化"""
-        for m in self.modules():
-            if isinstance(m, nn.Conv1d):
-                nn.init.xavier_normal_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                # 最后层初始化为近似恒等变换
-                if m.out_features == 1:
-                    nn.init.constant_(m.weight, 0)
-                    nn.init.constant_(m.bias, 0)
-                else:
-                    nn.init.kaiming_normal_(m.weight)
+        self.n = n  # Number of (X, R, C) triplets
+        self.X_layer = nn.Linear(n, hidden_dim)
+        self.r_layer = nn.Linear(n, hidden_dim)
+        self.c_layer = nn.Linear(n, hidden_dim)
+        # 1D convolutional layer so that can interaction with each tuple of (X, R, C) and maybe provide some nonlinearity
+        self.interaction_layer =  nn.Conv1d(in_channels=1, out_channels=hidden_dim, kernel_size=3, stride=3)
 
-class EnhancedPhysicsCNN(PhysicsCNN):
-    """
-    增强版架构，添加残差连接和物理约束
-    """
-    def __init__(self):
-        super().__init__()
-        
-        # 残差分支
-        self.res_fc = nn.Sequential(
-            nn.Linear(3, 16),  # 直接处理原始输入
-            nn.ReLU(),
-            nn.Linear(16, 1)
-        )
-    def forward(self, x):
-        # 原始特征路径
-        conv_out = super().forward(x)
-        
-        # 残差路径
-        identity = self.res_fc(x)
-        
-        # 组合输出
-        return conv_out + identity * 0.3  # 控制残差强度
+        #Final layer: Maps (hidden_dim * 4) to n outputs (Y1 to Yn)
+        #I dont think the final layer design is good, if i only use linear layer, the model will be a linear model essentially
+        self.output_layer = nn.Linear(hidden_dim * 4, n)
+
+    def forward(self, input_tensor):
+        """
+        Forward pass:
+        - Splits input into X, R, and C components
+        - Maps each component through its respective layer
+        - Concatenates results and maps to output Y
+        """
+        # Split input
+        X = input_tensor[:, 0::3]
+        r = input_tensor[:, 1::3]  
+        c = input_tensor[:, 2::3]  
+
+        X_out = F.relu(self.X_layer(X))
+        r_out = F.relu(self.r_layer(r))
+        c_out = F.relu(self.c_layer(c))
+        input_reshaped = input_tensor.unsqueeze(1)  # (batch_size, 1, n * 3)
+        interaction_out = F.relu(self.interaction_layer(input_reshaped))
+
+
+        # Concatenate the outputs of X, R, and C neurons
+        combined = torch.cat([X_out, r_out, c_out,interaction_out], dim=1)
+
+        # Final mapping to Y1, Y2, ..., Yn
+
+        output = self.output_layer(combined)
+
+        return output  # Shape: (batch_size, n)

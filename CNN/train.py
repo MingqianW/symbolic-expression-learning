@@ -1,70 +1,92 @@
-# train.py
 import torch
 import torch.nn as nn
-from model import PhysicsCNN, EnhancedPhysicsCNN
+from model import CustomNN
 from data_loader import create_dataloaders
-from data_generator import DataGenerator
-import torch.optim as optim
-import matplotlib.pyplot as plt
 
-def train():
-    # 1. 初始化模型
-    model = EnhancedPhysicsCNN()
+
+def create_model(n_groups=3900, hidden_dim=64, device='cpu'):
+    model = CustomNN(n_groups, hidden_dim)
     criterion = nn.MSELoss()
-    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    model.to(device)
+    print(f"device: {device}")
+    print("model info:")
+    print(model)
+    return model, criterion, optimizer
+
+
+def train_model(
+    n_groups=3,
+    hidden_dim=64,
+    epochs=30,
+    batch_size=32,
+    device='cuda' if torch.cuda.is_available() else 'cpu'
+): 
     
-    # 2. 加载数据
-    # (假设已通过data_generator生成数据)
-    train_loader, val_loader, _ = create_dataloaders(...)
+    train_loader, val_loader, _ = create_dataloaders(
+        train_dataset,
+        val_dataset,
+        test_dataset=None, 
+        batch_size=32,
+        shuffle_train=True
+    )
+
     
-    # 3. 训练循环
-    best_loss = float('inf')
-    train_losses, val_losses = [], []
+    num_samples = 1000
+    X_data = torch.randn(num_samples, n_groups*3)
+    Y_data = torch.randn(num_samples, n_groups)
+    dataset = TensorDataset(X_data, Y_data)
     
-    for epoch in range(100):
+    train_loader, val_loader, _ = create_dataloaders(dataset, batch_size)
+    model, criterion, optimizer = create_model(n_groups, hidden_dim, device)
+    
+    best_val_loss = float('inf')
+    for epoch in range(epochs):
         model.train()
-        epoch_train_loss = 0
-        
-        # 训练阶段
+        train_loss = 0.0
         for features, targets in train_loader:
+            features = features.to(device)
+            targets = targets.to(device)
+            
             optimizer.zero_grad()
-            
             outputs = model(features)
-            loss = criterion(outputs.squeeze(), targets)
-            
+            loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
-            
-            epoch_train_loss += loss.item()
+            train_loss += loss.item()
         
         # 验证阶段
         model.eval()
-        epoch_val_loss = 0
+        val_loss = 0.0
         with torch.no_grad():
             for features, targets in val_loader:
+                features = features.to(device)
+                targets = targets.to(device)
                 outputs = model(features)
-                epoch_val_loss += criterion(outputs.squeeze(), targets).item()
+                val_loss += criterion(outputs, targets).item()
         
-        # 记录损失
-        train_loss = epoch_train_loss/len(train_loader)
-        val_loss = epoch_val_loss/len(val_loader)
-        train_losses.append(train_loss)
-        val_losses.append(val_loss)
+        # 计算平均损失
+        avg_train_loss = train_loss / len(train_loader)
+        avg_val_loss = val_loss / len(val_loader)
         
         # 保存最佳模型
-        if val_loss < best_loss:
-            torch.save(model.state_dict(), "best_model.pth")
-            best_loss = val_loss
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            torch.save(model.state_dict(), 'best_model.pth')
         
-        print(f"Epoch {epoch+1}: Train Loss {train_loss:.4f}, Val Loss {val_loss:.4f}")
+        print(f"Epoch {epoch+1:02d}/{epochs} | "
+              f"Train Loss: {avg_train_loss:.4f} | "
+              f"Val Loss: {avg_val_loss:.4f}")
     
-    # 可视化训练过程
-    plt.plot(train_losses, label='Training Loss')
-    plt.plot(val_losses, label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('MSE Loss')
-    plt.legend()
-    plt.savefig('training_curve.png')
+    print(f"\nTraining complete! Best validation loss: {best_val_loss:.4f}")
 
 if __name__ == "__main__":
-    train()
+    # 配置参数
+    CONFIG = {
+        'n_groups': 3,
+        'hidden_dim': 64,
+        'epochs': 50,
+        'batch_size': 32
+    }
+    
+    train_model(**CONFIG)

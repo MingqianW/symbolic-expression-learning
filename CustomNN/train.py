@@ -1,11 +1,11 @@
 # train_simple.py
-from SimpleCNN.model import SimpleCNN
+from CustomNN.model import CustomNN
 from data_loader import create_dataloaders
 import torch
 import torch.nn as nn
 
-def create_simple_model(device='cpu'):
-    model = SimpleCNN()
+def create_model(device='cpu'):
+    model = CustomNN()
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
     model.to(device)
@@ -15,14 +15,14 @@ def create_simple_model(device='cpu'):
     return model, criterion, optimizer
 
 
-def train_simple_model(
+def train_model(
     device='cuda' if torch.cuda.is_available() else 'cpu',
     train_dataset=None,
     val_dataset=None,
     epochs = 30,
     batch_size = 32
 ):
-    model, criterion, optimizer = create_simple_model(device)
+    model, criterion, optimizer = create_model(device)
 
     train_loader, val_loader, _ = create_dataloaders(
         train_dataset,
@@ -57,4 +57,4 @@ def train_simple_model(
         print(f"Epoch {epoch+1} | Loss: {loss.item():.4f} | Val Loss: {val_loss:.4f}")
 
 if __name__ == "__main__":
-    train_simple_model()
+    train_model()

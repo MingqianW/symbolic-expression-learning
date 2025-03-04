@@ -1,0 +1,3 @@
+[submodule "DeepSymRegTorch"]
+	path = DeepSymRegTorch
+	url = https://github.com/samuelkim314/DeepSymRegTorch.git

@@ -9,9 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from data_generator import DataGenerator
-from DeepSymRegTorch.utils import pretty_print, functions
-from DeepSymRegTorch.utils.symbolic_network import SymbolicNet
-from DeepSymRegTorch.utils.regularization import L12Smooth
+from DeepSymRegTorch01.utils import pretty_print, functions
+from DeepSymRegTorch01.utils.symbolic_network import SymbolicNet
+from DeepSymRegTorch01.utils.regularization import L12Smooth
 from inspect import signature
 import time
 import argparse

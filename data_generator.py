@@ -63,30 +63,63 @@ class DataGenerator:
             X = [X0]
             R_list = []
             C_list = []
+            I_list = []
             
             for _ in range(num_points - 1):
                 R_t = self._random_state.uniform(*self.R_range)
                 C_t = self._random_state.uniform(*self.C_range)
+                I_t = self._random_state.normal(scale=self.noise_scale)
                 R_list.append(R_t)
-                C_list.append(C_t)                
+                C_list.append(C_t)     
+                I_list.append(I_t)            
                 current_x = X[-1]
                 delta = self.f(current_x, R_t, C_t)
-                noise = self._random_state.normal(scale=self.noise_scale)
-                X.append(current_x + delta + noise)
+                X.append(delta + I_t)
                 
             
             self.sequences.append({
                 'R': np.array(R_list),
                 'C': np.array(C_list),
+                'I': np.array(I_list),
                 'X': np.array(X)
             })
             
-    def get_all_parameters(self):
-        return [(seq['R'], seq['C']) for seq in self.sequences]
+    def get_all_parameters(self, 
+                        train_ratio: float = 0.8,
+                        val_ratio: float = 0.1,
+                        random_seed: int = None):
+        return [(seq['R'], seq['C'], seq['I']) for seq in self.sequences]
 
     def clear_data(self):
         self.sequences = []
         
+    def prepare_datasets_by_col(self, 
+                        train_ratio: float = 0.8,
+                        val_ratio: float = 0.1,
+                        random_seed: int = None):
+        """
+        return the data as X:[N,4] and Y as [N,1]
+        """
+        features, targets = [], []
+        for seq in self.sequences:
+            X = seq['X']
+            R = seq['R']
+            C = seq['C']
+            I = seq['I']
+            # (R, C, X_t) -> X_{t+1}
+            for t in range(len(X)-1):
+                features.append([R[t], C[t], X[t], I[t]])
+                targets.append(X[t+1])
+                
+        X = torch.tensor(features)
+        y = torch.tensor(targets)
+        X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=(1 - train_ratio), random_state=random_seed)
+        
+        X_val, X_test, y_val, y_test = train_test_split(
+            X_temp, y_temp, test_size= (1 - train_ratio - val_ratio) /(1 - train_ratio), random_state=random_seed)
+        return X_train, y_train,X_test,y_test
+    
     def prepare_datasets(self, 
                         train_ratio: float = 0.8,
                         val_ratio: float = 0.1,
@@ -100,10 +133,10 @@ class DataGenerator:
             X = seq['X']
             R = seq['R']
             C = seq['C']
-            
+            I = seq['I']
             # (R, C, X_t) -> X_{t+1}
             for t in range(len(X)-1):
-                features.append([R[t], C[t], X[t]])
+                features.append([R[t], C[t], X[t], I[t]])
                 targets.append(X[t+1])
                 
         X = np.array(features)
@@ -126,7 +159,7 @@ if __name__ == "__main__":
         return x/(1 + R*C)  # Example f
     
     generator = DataGenerator(
-        f=f,
+        f = f,
         R_range=(1.0, 5.0),
         C_range=(1.0, 5.0),
         initial_x_range=(0.0, 10.0),
@@ -147,6 +180,7 @@ if __name__ == "__main__":
         print(f"Initial X0: {seq['X'][0]:.2f}")
         print(f"R values: {seq['R'].round(2)}")
         print(f"C values: {seq['C'].round(2)}")
+        print(f"I values: {seq['I'].round(2)}")
         print(f"X progression: {seq['X'].round(2)}")
         print()
     
@@ -156,18 +190,18 @@ if __name__ == "__main__":
         X = seq['X']
         R = seq['R']
         C = seq['C']
+        I = seq['I']
         for t in range(len(X)-1):
             x_t = X[t]
             r_t = R[t]
             c_t = C[t]
-            expected = x_t + f(x_t, r_t, c_t)
+            I_t = I[t]
+            expected = f(x_t, r_t, c_t) + I_t
             actual = X[t+1]
             noise = actual - expected
             
             print(f"t={t}:")
-            print(f"  expected: {x_t:.4f} + ({x_t:.4f}/[1+{r_t:.4f}+{c_t:.4f}])")
-            print(f"          = {x_t:.4f} + {x_t/(1+r_t+c_t):.4f}")
-            print(f"          = {expected:.4f}")
-            print(f"  actual: {actual:.4f} (noise: {noise:.4f})")
+            print(f"  expected: {expected:.4f}")
+            print(f"  actual: {actual:.4f}")
             print("-"*60)
         print("\n"*2)

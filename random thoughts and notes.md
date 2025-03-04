@@ -27,6 +27,33 @@ why we get nan as loss？1. did not normalize. 2. architure.
 
 2. make sure dataset is designed as I expected: done
 
-3. design CNN: 
+3. design CNN: done
 
-4. the requirement file
+4. the requirement file done
+
+
+As what I talked with Prof Singh in last meeting, I will 
+1. include the noise I into the training: Done
+2. Instead of X_t+1 = X_t + f(X_t, R_t, C_t), use X_t+1 = f(X_t, R_t, C_t): Done
+
+Next, as talked before, I will not use the two model we have before, I will then try to use the EQL.
+Thanks to their pytorch implementation(https://github.com/samuelkim314/DeepSymRegTorch/blob/main/utils/symbolic_network.py), my work become much easier!
+
+Note: I use different version of matplotlib and h5py, I hope it is ok.
+
+When the set of primative function does not conatin the true expression, it failed.
+
+To be more specfic, it failed since there is no division in the previous set, even though 1/x cant be found.
+Epoch: 12000    Total training loss: 61.393044  Test error: 1048664.500000 
+clearly, it failed to learn the pattern. maybe need to fine-tune?
+Guess: numerical stability? maybe consider try to do in log space
+
+need to change the original function to other form without divison to try. 
+Need more experiments.
+
+
+
+
+
+
+

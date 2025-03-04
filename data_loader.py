@@ -16,7 +16,7 @@ class SequencesDataset(torch.utils.data.Dataset):
         features_np = np.array(features) if not isinstance(features, np.ndarray) else features
         targets_np = np.array(targets) if not isinstance(targets, np.ndarray) else targets
         
-        # Normalization
+        # Normalization?
         self.features = torch.FloatTensor(features_np)          
         self.targets = torch.FloatTensor(targets_np)
         

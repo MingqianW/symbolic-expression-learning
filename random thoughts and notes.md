@@ -51,6 +51,8 @@ Guess: numerical stability? maybe consider try to do in log space
 need to change the original function to other form without divison to try. 
 Need more experiments.
 
+1. Make sure EQL_main is correct first, try X_t+1 = X_t + 1 +I 
+
 
 
 

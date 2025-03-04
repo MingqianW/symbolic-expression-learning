@@ -18,7 +18,7 @@ import argparse
 
 
 def dynamic_func(x, R, C):
-    return x / (1+ R*C )
+    return x + R + C
 
 generator = DataGenerator(
     f=dynamic_func,
@@ -135,9 +135,8 @@ class Benchmark:
     def train(self, func, func_name='', trials=1, func_dir='results/test'):
         """Train the network to find a given function"""
 
-        use_cuda = torch.cuda.is_available()
-        device = torch.device("cuda:2" if use_cuda else "cpu")
-        print("Use cuda:", use_cuda, "Device:", device)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Use cuda:", torch.cuda.is_available(), "Device:", device)
 
         x, y,x_test,y_test= generator.prepare_datasets_by_col(train_ratio=0.8, val_ratio=0.1, random_seed=42)
         # x_val, y_val = generate_data(func, N_VAL)
@@ -316,7 +315,7 @@ if __name__ == "__main__":
 
     bench = Benchmark(**kwargs)
 
-    bench.benchmark(lambda R,C,X,I: (X / (1+ R*C ))+I, func_name="dynamic_func", trials=20)
+    bench.benchmark(lambda R,C,X,I: X +R +C+I, func_name="dynamic_func", trials=20)
     # bench.benchmark(lambda x: x**2, func_name="x^2", trials=20)
     # bench.benchmark(lambda x: x**3, func_name="x^3", trials=20)
     # bench.benchmark(lambda x: np.sin(2*np.pi*x), func_name="sin(2pix)", trials=20)

@@ -17,26 +17,26 @@ import time
 import argparse
 
 
-def dynamic_func(x, R, C):
-    return x + R + C
+def dynamic_func(x, R, C,I):
+    return R +x+C+I
 
 generator = DataGenerator(
     f=dynamic_func,
-    R_range=(1.0, 5.0),
-    C_range=(1.0, 5.0),
-    initial_x_range=(-2.0, 2.0),
+    R_range=(0.0, 1.0),
+    C_range=(0.0, 1.0),
+    initial_x_range=(-1.0, 1.0),
     noise_scale=0.1
 )
-generator.generate(num_points=100, num_sequences=200, random_seed=42)
+generator.generate(num_points=200, num_sequences=1, random_seed=42)
 
 
-N_TRAIN = 256       # Size of training dataset
-N_VAL = 100         # Size of validation dataset
-DOMAIN = (-1, 1)    # Domain of dataset - range from which we sample x
+#N_TRAIN = 256       # Size of training dataset
+#N_VAL = 100         # Size of validation dataset
+#DOMAIN = (-1, 1)    # Domain of dataset - range from which we sample x
 # DOMAIN = np.array([[0, -1, -1], [1, 1, 1]])   # Use this format if each input variable has a different domain
-N_TEST = 100        # Size of test dataset
-DOMAIN_TEST = (-2, 2)   # Domain of test dataset - should be larger than training domain to test extrapolation
-NOISE_SD = 0        # Standard deviation of noise for training dataset
+#N_TEST = 100        # Size of test dataset
+#DOMAIN_TEST = (-2, 2)   # Domain of test dataset - should be larger than training domain to test extrapolation
+#NOISE_SD = 0        # Standard deviation of noise for training dataset
 var_names = ["R", "C","X","I"]  # Variable names for the dataset
 
 # Standard deviation of random distribution for weight initializations.
@@ -63,7 +63,7 @@ class Benchmark:
     """Benchmark object just holds the results directory (results_dir) to save to and the hyper-parameters. So it is
     assumed all the results in results_dir share the same hyper-parameters. This is useful for benchmarking multiple
     functions with the same hyper-parameters."""
-    def __init__(self, results_dir, n_layers=2, reg_weight=5e-3, learning_rate=1e-2,
+    def __init__(self, results_dir, n_layers=3, reg_weight=5e-3, learning_rate=1e-2,
                  n_epochs1=10001, n_epochs2=10001):
         """Set hyper-parameters"""
         self.activation_funcs = [
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     bench = Benchmark(**kwargs)
 
-    bench.benchmark(lambda R,C,X,I: X +R +C+I, func_name="dynamic_func", trials=20)
+    #bench.benchmark(lambda R,C,X,I: R+C+X+I, func_name="dynamic_func", trials=20)
     # bench.benchmark(lambda x: x**2, func_name="x^2", trials=20)
     # bench.benchmark(lambda x: x**3, func_name="x^3", trials=20)
     # bench.benchmark(lambda x: np.sin(2*np.pi*x), func_name="sin(2pix)", trials=20)

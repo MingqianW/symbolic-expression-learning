@@ -23,7 +23,7 @@ DOMAIN = (-1, 1)    # Domain of dataset - range from which we sample x
 N_TEST = 100        # Size of test dataset
 DOMAIN_TEST = (-2, 2)   # Domain of test dataset - should be larger than training domain to test extrapolation
 NOISE_SD = 0        # Standard deviation of noise for training dataset
-var_names = ["x", "y", "z"]
+var_names = ["x", "y", "z", "n"]
 
 # Standard deviation of random distribution for weight initializations.
 init_sd_first = 0.1
@@ -49,17 +49,18 @@ class Benchmark:
     """Benchmark object just holds the results directory (results_dir) to save to and the hyper-parameters. So it is
     assumed all the results in results_dir share the same hyper-parameters. This is useful for benchmarking multiple
     functions with the same hyper-parameters."""
-    def __init__(self, results_dir, n_layers=2, reg_weight=5e-3, learning_rate=1e-2,
+    def __init__(self, results_dir, n_layers=3, reg_weight=5e-3, learning_rate=1e-2,
                  n_epochs1=10001, n_epochs2=10001):
         """Set hyper-parameters"""
         self.activation_funcs = [
             *[functions.Constant()] * 2,
             *[functions.Identity()] * 4,
-            *[functions.Square()] * 4,
-            *[functions.Sin()] * 2,
-            *[functions.Exp()] * 2,
-            *[functions.Sigmoid()] * 2,
-            *[functions.Product()] * 2
+            #*[functions.Square()] * 4,
+            #*[functions.Sin()] * 2,
+            #*[functions.Exp()] * 2,
+            #*[functions.Sigmoid()] * 2,
+            #*[functions.Product()] * 2,
+            *[functions.Division()] * 2
         ]
 
         self.n_layers = n_layers                # Number of hidden layers
@@ -298,12 +299,12 @@ if __name__ == "__main__":
 
     bench = Benchmark(**kwargs)
 
-    bench.benchmark(lambda x: x, func_name="x", trials=20)
+    #bench.benchmark(lambda x: x, func_name="x", trials=20)
     # bench.benchmark(lambda x: x**2, func_name="x^2", trials=20)
     # bench.benchmark(lambda x: x**3, func_name="x^3", trials=20)
     # bench.benchmark(lambda x: np.sin(2*np.pi*x), func_name="sin(2pix)", trials=20)
     # bench.benchmark(lambda x: np.exp(x), func_name="e^x", trials=20)
-    # bench.benchmark(lambda x, y: x*y, func_name="xy", trials=20)
+    bench.benchmark(lambda x: 1/x, func_name="1/x", trials=20)
     # bench.benchmark(lambda x, y: np.sin(2 * np.pi * x) + np.sin(4*np.pi * y),
     #                 func_name="sin(2pix)+sin(4py)", trials=20)
     # bench.benchmark(lambda x, y, z: 0.5*x*y + 0.5*z, func_name="0.5xy+0.5z", trials=20)

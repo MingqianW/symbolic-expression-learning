@@ -52,10 +52,15 @@ need to change the original function to other form without divison to try.
 Need more experiments.
 
 1. Make sure EQL_main is correct first, try X_t+1 = X_t + 1 +I 
+While if I use my own data generator, I get Epoch: 0        Total training loss: nan        Test error: nan
 
+I can't figure out why.
+Since I failed to run EQL_main on our own data generator, I would use their data generator first(The main difference is that it is not a time series data and each x_t is independent)
 
+OK use its original benchmark file lets first test on 1/x to make sure it can learn divison. After a few tuning, it may not be able to learn the devision.
 
+Maybe we can try only keep the identity and division to see if the modle can learn: Failed
 
+Maybe it is just one of the issue of EQL, I will try KAN next.
 
-
-
+Question: How KAN get symbolic expression from the splines

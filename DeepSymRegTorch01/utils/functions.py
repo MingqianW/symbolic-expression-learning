@@ -174,18 +174,18 @@ class Product(BaseFunction2):
     def sp(self, x, y):
         return x*y / self.norm
 
-# class Division(BaseFunction2):
-#     def __init__(self, norm=1.):
-#         super().__init__(norm=norm)
+class Division(BaseFunction2):
+    def __init__(self, norm=0.1):
+        super().__init__(norm=norm)
 
-#     def torch(self, x, y):
-#         return x / (y + 1e-8) / self.norm  # Adding a small value to avoid division by zero
+    def torch(self, x, y):
+        return x / (y) / self.norm 
 
-#     def sp(self, x, y):
-#         return x / (y + 1e-8) / self.norm
+    def sp(self, x, y):
+        return x / (y ) / self.norm
 
-#     def np(self, x, y):
-#         return np.divide(x, y + 1e-8) / self.norm
+    def np(self, x, y):
+        return np.divide(x, y) / self.norm
 
 def count_inputs(funcs):
     i = 0
@@ -224,5 +224,5 @@ default_func = [
     *[Exp()] * 2,
     *[Sigmoid()] * 2,
     *[Product()] * 2,
-    # *[Division()] * 2,
+    *[Division()] * 2,
 ]

@@ -73,15 +73,15 @@ class DataGenerator:
                 C_list.append(C_t)     
                 I_list.append(I_t)            
                 current_x = X[-1]
-                delta = self.f(current_x, R_t, C_t)
-                X.append(delta + I_t)
+                delta = self.f(current_x, R_t, C_t, I_t)
+                X.append(delta)
                 
             
             self.sequences.append({
                 'R': np.array(R_list),
                 'C': np.array(C_list),
+                'X': np.array(X),
                 'I': np.array(I_list),
-                'X': np.array(X)
             })
             
     def get_all_parameters(self, 
@@ -155,8 +155,8 @@ class DataGenerator:
         return train_dataset, val_dataset, test_dataset
     
 if __name__ == "__main__":
-    def f(x, R, C):
-        return x/(1 + R*C)  # Example f
+    def f(x, R, C,I):
+        return x + R+C+I  # Example f
     
     generator = DataGenerator(
         f = f,
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             r_t = R[t]
             c_t = C[t]
             I_t = I[t]
-            expected = f(x_t, r_t, c_t) + I_t
+            expected = f(r_t, c_t,x_t,I_t)
             actual = X[t+1]
             noise = actual - expected
             
@@ -205,3 +205,33 @@ if __name__ == "__main__":
             print(f"  actual: {actual:.4f}")
             print("-"*60)
         print("\n"*2)
+        
+    X_train, y_train, X_test, y_test = generator.prepare_datasets_by_col(train_ratio=0.8, val_ratio=0.1, random_seed=42)
+    print("Training data:")
+    print(X_train)
+    print(y_train)
+    print("Test data:")
+    print(X_test)
+    print(y_test)
+    
+    # Validate that the data matches the function
+    print("Validation of generated data:")
+    for i in range(len(X_train)):
+        R, C, X, I = X_train[i]
+        expected = f( R.item(), C.item(),X.item(), I.item())
+        actual = y_train[i].item()
+        print(f"Train data point {i}:")
+        print(f"  Input: R={R.item()}, C={C.item()}, X={X.item()}, I={I.item()}")
+        print(f"  Expected: {expected:.4f}")
+        print(f"  Actual: {actual:.4f}")
+        print("-"*60)
+    
+    for i in range(len(X_test)):
+        R, C, X, I = X_test[i]
+        expected = f( R.item(), C.item(),X.item(), I.item())
+        actual = y_test[i].item()
+        print(f"Test data point {i}:")
+        print(f"  Input: R={R.item()}, C={C.item()}, X={X.item()}, I={I.item()}")
+        print(f"  Expected: {expected:.4f}")
+        print(f"  Actual: {actual:.4f}")
+        print("-"*60)

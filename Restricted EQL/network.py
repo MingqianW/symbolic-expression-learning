@@ -11,4 +11,4 @@ class MixedModel(nn.Module):
     def forward(self, x):
         power_out = self.power_activation(x)  # [N, 1]
         linear_out = self.linear(x)           # [N, 1]
-        return power_out + linear_out # Should I just add them?
+        return power_out + linear_out  # Should I just add them?

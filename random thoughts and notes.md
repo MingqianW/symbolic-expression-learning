@@ -63,4 +63,17 @@ Maybe we can try only keep the identity and division to see if the modle can lea
 
 Maybe it is just one of the issue of EQL, I will try KAN next.
 
-Question: How KAN get symbolic expression from the splines
+Back to EQL, if I only allow use activation sets with 3 layers:        self.activation_funcs = [
+            *[functions.Constant()] * 2,
+            *[functions.Identity()] * 4,
+            *[functions.Inverse()] * 2,
+        ]
+we can briefly get a symbolic expression that implies the division structure: 3.78596/(9.31071*x + 1.0e-6) - 4.24765/(1.0e-6 - 7.16598*x)
+transforming to log space failed.
+
+If we scale the data in to the range of (1,2), it is doable.
+
+product need two input？ how to solve？
+
+When there are only 1 variables, it is good, but when we have more than 2, it gets nasty.
+Rescale the data before applying to the activation function

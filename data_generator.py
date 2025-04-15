@@ -156,7 +156,7 @@ class DataGenerator:
     
 if __name__ == "__main__":
     def f(x, R, C,I):
-        return x + R+C+I  # Example f
+        return x /(R*C) +I  # Example f
     
     generator = DataGenerator(
         f = f,

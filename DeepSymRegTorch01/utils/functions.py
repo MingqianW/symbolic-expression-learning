@@ -136,6 +136,16 @@ class Log(BaseFunction):
 
     def sp(self, x):
         return sp.log(sp.Abs(x)) / self.norm
+    
+class Inverse(BaseFunction):
+    def __init__(self, norm=1):
+        super().__init__(norm)
+
+    def torch(self, x):
+        return 1.0 / (x + 1e-6) / self.norm  # Adding epsilon to avoid division by zero
+
+    def sp(self, x):
+        return 1 / (x + 1e-6) / self.norm
 
 
 class BaseFunction2:

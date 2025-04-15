@@ -18,12 +18,12 @@ import argparse
 
 N_TRAIN = 256       # Size of training dataset
 N_VAL = 100         # Size of validation dataset
-DOMAIN = (-1, 1)    # Domain of dataset - range from which we sample x
+DOMAIN = (1, 2)    # Domain of dataset - range from which we sample x
 # DOMAIN = np.array([[0, -1, -1], [1, 1, 1]])   # Use this format if each input variable has a different domain
 N_TEST = 100        # Size of test dataset
 DOMAIN_TEST = (-2, 2)   # Domain of test dataset - should be larger than training domain to test extrapolation
 NOISE_SD = 0        # Standard deviation of noise for training dataset
-var_names = ["x", "y", "z", "n"]
+var_names = ["R", "C,","X","I"]
 
 # Standard deviation of random distribution for weight initializations.
 init_sd_first = 0.1
@@ -42,6 +42,7 @@ def generate_data(func, N, range_min=DOMAIN[0], range_max=DOMAIN[1]):
     x_dim = len(signature(func).parameters)     # Number of inputs to the function, or, dimensionality of x
     x = (range_max - range_min) * torch.rand([N, x_dim]) + range_min
     y = torch.tensor([[func(*x_i)] for x_i in x])
+    #return torch.log(x), torch.log(y)
     return x, y
 
 
@@ -49,7 +50,7 @@ class Benchmark:
     """Benchmark object just holds the results directory (results_dir) to save to and the hyper-parameters. So it is
     assumed all the results in results_dir share the same hyper-parameters. This is useful for benchmarking multiple
     functions with the same hyper-parameters."""
-    def __init__(self, results_dir, n_layers=3, reg_weight=5e-3, learning_rate=1e-2,
+    def __init__(self, results_dir, n_layers=4, reg_weight=5e-3, learning_rate=1e-2,
                  n_epochs1=10001, n_epochs2=10001):
         """Set hyper-parameters"""
         self.activation_funcs = [
@@ -60,7 +61,9 @@ class Benchmark:
             #*[functions.Exp()] * 2,
             #*[functions.Sigmoid()] * 2,
             #*[functions.Product()] * 2,
-            *[functions.Division()] * 2
+            *[functions.Inverse()] * 2,
+            #*[functions.Division()] * 2,
+            #*[functions.Log()] * 2
         ]
 
         self.n_layers = n_layers                # Number of hidden layers
@@ -189,6 +192,7 @@ class Benchmark:
                     reg_loss = regularization(net.get_weights_tensor())
                     loss = mse_loss + self.reg_weight * reg_loss
                     loss.backward()
+                    torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=10)
                     optimizer.step()
 
                     if epoch % self.summary_step == 0:
@@ -223,6 +227,7 @@ class Benchmark:
                     reg_loss = regularization(net.get_weights_tensor())
                     loss = mse_loss + self.reg_weight * reg_loss
                     loss.backward()
+                    torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm=10)
                     optimizer.step()
 
                     if epoch % self.summary_step == 0:
@@ -242,8 +247,8 @@ class Benchmark:
                         print("Epoch: %d\tTotal training loss: %f\tTest error: %f" % (epoch, loss_val, error_test_val))
 
                         if np.isnan(loss_val) or loss_val > 1000:  # If loss goes to NaN, restart training
+                            #continue # instead of restart the training, we skip
                             break
-
                 t1 = time.time()
 
             tot_time = t1-t0
@@ -307,13 +312,13 @@ if __name__ == "__main__":
     bench.benchmark(lambda x: 1/x, func_name="1/x", trials=20)
     # bench.benchmark(lambda x, y: np.sin(2 * np.pi * x) + np.sin(4*np.pi * y),
     #                 func_name="sin(2pix)+sin(4py)", trials=20)
-    # bench.benchmark(lambda x, y, z: 0.5*x*y + 0.5*z, func_name="0.5xy+0.5z", trials=20)
+   # bench.benchmark(lambda x, y, z: 0.5*x*y + 0.5*z, func_name="0.5xy+0.5z", trials=20)
     # bench.benchmark(lambda x, y, z: x**2 + y - 2*z, func_name="x^2+y-2z", trials=20)
     # bench.benchmark(lambda x: np.exp(-x**2), func_name="e^-x^2", trials=20)
     # bench.benchmark(lambda x: 1 / (1 + np.exp(-10*x)), func_name="sigmoid(10x)", trials=20)
     # bench.benchmark(lambda x, y: x**2 + np.sin(2*np.pi*y), func_name="x^2+sin(2piy)", trials=20)
 
     # 3-layer functions
-    # bench.benchmark(lambda x, y, z: (x+y*z)**3, func_name="(x+yz)^3", trials=20)
+    #bench.benchmark(lambda R, C, I, X: X*R*C +I, func_name="func", trials=20)
 
 

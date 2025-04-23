@@ -13,5 +13,5 @@ class PowerActivation(nn.Module):
         self.C = nn.Parameter(torch.tensor(1.0))
         
     def forward(self, x):
-        x = x + 1e-8  
+        #x = x + 1e-8  
         return self.C * torch.prod(x ** self.w, dim=-1, keepdim=True)

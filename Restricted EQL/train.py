@@ -18,8 +18,8 @@ def generate_data(func, N, range_min=DOMAIN[0], range_max=DOMAIN[1]):
     return x, y #x.shape: [N, x_dim] and y.shape: [N, 1]
 
 
-def true_func(x1, x2):
-    return 0.8* x1**(0.3) * x2**(-0.6) + 0.5 * x1 + 0.2 * x2 + 0.1
+def true_func(X, R, C):
+    return X * R**(-1) * C**(-1)
 
 def print_symbolic_expression(model):
     w = model.power_activation.w.detach().cpu().numpy()  # exponents
@@ -41,15 +41,41 @@ def print_symbolic_expression(model):
     full_expr = f"{power_expr} + {linear_expr}"
     print("Learned symbolic expression:")
     print(full_expr)
-    
-# ---- Train the Model ----
+
+def print_symbolic_expression_with_fc(model):
+    w = model.power_activation.w.detach().cpu().numpy()
+    C = model.power_activation.C.item()
+    a = model.linear.weight.detach().cpu().numpy().flatten()
+    b = model.linear.bias.item()
+
+    alpha = model.fc.weight.detach().cpu().numpy().flatten()
+    beta = model.fc.bias.item()
+
+    input_terms = [f"x{i+1}" for i in range(len(w))]
+
+    # Flattened contributions
+    final_C = alpha[0] * C
+    final_bias = alpha[1] * b + beta
+    final_a = alpha[1] * a
+
+    # Expression building
+    power_expr = " * ".join([f"{x}^{w_i:.3f}" for x, w_i in zip(input_terms, w)])
+    linear_expr = " + ".join([f"{a_i:.3f}*{x}" for a_i, x in zip(final_a, input_terms)])
+
+    full_expr = f"{final_C:.3f} * ({power_expr}) + {linear_expr} + {final_bias:.3f}"
+
+    print("Full learned symbolic expression:")
+    print(full_expr)
+
+
+
 def train_model():
     torch.manual_seed(233)
     
-    x_train, y_train = generate_data(true_func, N=1000)
+    x_train, y_train = generate_data(true_func, N=5000)
     input_dim = x_train.shape[1]
     model = MixedModel(input_dim)
-    x_test, y_test = generate_data(true_func, N=200)
+    x_test, y_test = generate_data(true_func, N=500)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-2) 
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2000, verbose=True)
@@ -75,7 +101,8 @@ def train_model():
         if epoch % 100 == 0:
             print(f"Epoch {epoch}, Loss: {loss.item():.6f}  Test Loss: {test_loss.item():.6f}")
         scheduler.step(test_loss)
-
+    
+    print_symbolic_expression_with_fc(model)
     print_symbolic_expression(model)
     return model
 

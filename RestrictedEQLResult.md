@@ -125,3 +125,6 @@ The initilization of paramter is super important. If "distances" from the paramt
 
 2. We still need skip connection!
    feed the input varibles into later layers resulting an increasing network?
+
+$$
+$$

@@ -226,7 +226,7 @@ def train_model(model_type="mixed"):
     x_test, y_test = generate_data(true_func, N=5000)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=1e-2)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2000, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2000)
 
     cutoff = 0.001   # Cutoff for pruning need to be chose carefully or maybe should design a good way to decide
     pruned = False
@@ -249,7 +249,7 @@ def train_model(model_type="mixed"):
             print(f"Pruning model at epoch {epoch}, test loss = {test_loss.item():.6f}")
             model = SparseComposedModelPruned(model)
             optimizer = optim.Adam(model.parameters(), lr=1e-2)  # Reinitialize optimizer
-            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8000, verbose=True)   #Reinitialize scheduler
+            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8000)   #Reinitialize scheduler
             pruned = True
         # Switches can get stuck early. add some noise to the logits during early training:
         if epoch < 5000 and model_type == "sparse" and not pruned:
